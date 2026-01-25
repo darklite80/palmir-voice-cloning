@@ -1,0 +1,47 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Audio files
+*.wav
+*.mp3
+*.ogg
+*.flac
+reference.wav
+cloned_voice.wav
+*.onnx
+
+# Models and cache
+models/
+.cache/
+~/.cache/huggingface/
+
+# TTS cache
+.local/
+*.pth
+*.pt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
