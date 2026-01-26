@@ -1,0 +1,15 @@
+[Unit]
+Description=Voice Cloning Web Interface
+After=network.target
+
+[Service]
+Type=simple
+User=distiller
+WorkingDirectory="/home/distiller/projects/voice cloning"
+Environment="PATH=/home/distiller/projects/voice cloning/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart="/home/distiller/projects/voice cloning/venv/bin/python" "/home/distiller/projects/voice cloning/web_app.py"
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

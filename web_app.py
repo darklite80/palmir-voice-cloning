@@ -333,4 +333,4 @@ if __name__ == '__main__':
     print("\nPress Ctrl+C to stop")
     print("=" * 60)
 
-    app.run(host='0.0.0.0', port=PORT, debug=True, threaded=True)
+    app.run(host='0.0.0.0', port=PORT, debug=False, use_reloader=False, threaded=True)

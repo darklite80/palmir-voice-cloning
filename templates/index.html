@@ -505,7 +505,17 @@
                     body: formData
                 });
 
+                console.log('Upload response status:', response.status);
+                console.log('Upload response URL:', response.url);
+
+                if (!response.ok) {
+                    showMessage('error', `Server error: ${response.status} ${response.statusText}. Check console for details.`, 'cloneMessage');
+                    console.error('Upload failed:', response);
+                    return;
+                }
+
                 const data = await response.json();
+                console.log('Upload response data:', data);
 
                 if (data.success) {
                     currentReferenceFile = data.filename;
@@ -518,6 +528,7 @@
                     showMessage('error', data.message, 'cloneMessage');
                 }
             } catch (error) {
+                console.error('Upload exception:', error);
                 showMessage('error', 'Upload failed: ' + error.message, 'cloneMessage');
             }
         }
