@@ -137,40 +137,62 @@ def load_model():
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     """Upload reference audio file."""
-    if 'file' not in request.files:
-        return jsonify({'success': False, 'message': 'No file provided'})
+    try:
+        print(f"Upload request received. Files: {request.files.keys()}")
 
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'success': False, 'message': 'No file selected'})
+        if 'file' not in request.files:
+            print("ERROR: No 'file' in request.files")
+            return jsonify({'success': False, 'message': 'No file provided'})
 
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        timestamp = int(time.time())
-        base_name = f"reference_{timestamp}.wav"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], base_name)
+        file = request.files['file']
+        print(f"File received: {file.filename}")
 
-        # Save uploaded file
-        temp_path = filepath + '.tmp'
-        file.save(temp_path)
+        if file.filename == '':
+            print("ERROR: Empty filename")
+            return jsonify({'success': False, 'message': 'No file selected'})
 
-        # Convert to WAV if needed
-        if filename.endswith('.wav'):
-            os.rename(temp_path, filepath)
-        else:
-            if convert_to_wav(temp_path, filepath):
-                os.remove(temp_path)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            timestamp = int(time.time())
+            base_name = f"reference_{timestamp}.wav"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], base_name)
+
+            print(f"Saving to: {filepath}")
+
+            # Save uploaded file
+            temp_path = filepath + '.tmp'
+            file.save(temp_path)
+            print(f"File saved to temp: {temp_path}")
+
+            # Convert to WAV if needed
+            if filename.lower().endswith('.wav'):
+                os.rename(temp_path, filepath)
+                print("WAV file renamed")
             else:
-                return jsonify({'success': False, 'message': 'Failed to convert audio to WAV format'})
+                print(f"Converting {filename} to WAV...")
+                if convert_to_wav(temp_path, filepath):
+                    os.remove(temp_path)
+                    print("Conversion successful")
+                else:
+                    print("ERROR: Conversion failed")
+                    return jsonify({'success': False, 'message': 'Failed to convert audio to WAV format'})
 
-        return jsonify({
-            'success': True,
-            'message': 'File uploaded successfully',
-            'filename': base_name,
-            'path': filepath
-        })
+            print(f"Upload complete: {base_name}")
+            return jsonify({
+                'success': True,
+                'message': 'File uploaded successfully',
+                'filename': base_name,
+                'path': filepath
+            })
 
-    return jsonify({'success': False, 'message': 'Invalid file type. Allowed: WAV, MP3, OGG, FLAC, M4A'})
+        print(f"ERROR: Invalid file type for {file.filename}")
+        return jsonify({'success': False, 'message': 'Invalid file type. Allowed: WAV, MP3, OGG, FLAC, M4A'})
+
+    except Exception as e:
+        print(f"ERROR in upload_file: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Upload error: {str(e)}'})
 
 
 @app.route('/api/clone', methods=['POST'])
