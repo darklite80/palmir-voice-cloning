@@ -31,8 +31,8 @@ Launch the beautiful web interface:
 ```
 
 Then open in your browser:
-- **Local:** http://localhost:8080
-- **Network:** http://\<palmir-ip\>:8080
+- **Local:** http://localhost:5001
+- **Network:** http://\<palmir-ip\>:5001
 
 **Features:**
 - Drag & drop file upload

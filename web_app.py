@@ -301,7 +301,7 @@ def list_files():
 
 
 if __name__ == '__main__':
-    PORT = 8080  # Change this to your desired port
+    PORT = 5001  # Change this to your desired port
 
     print("=" * 60)
     print("🎙️  XTTS v2 Voice Cloning Web Interface")

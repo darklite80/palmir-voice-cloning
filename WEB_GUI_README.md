@@ -31,12 +31,12 @@ python web_app.py
 
 **On the same device:**
 ```
-http://localhost:8080
+http://localhost:5001
 ```
 
 **From another device on your network:**
 ```
-http://<palmir-ip-address>:8080
+http://<palmir-ip-address>:5001
 ```
 
 Find your IP with: `hostname -I | awk '{print $1}'`
@@ -270,7 +270,7 @@ import requests
 
 # Upload file
 files = {'file': open('voice.wav', 'rb')}
-r = requests.post('http://localhost:8080/api/upload', files=files)
+r = requests.post('http://localhost:5001/api/upload', files=files)
 ref_file = r.json()['filename']
 
 # Clone voice
@@ -279,7 +279,7 @@ data = {
     'text': 'Hello world',
     'language': 'en'
 }
-r = requests.post('http://localhost:8080/api/clone', json=data)
+r = requests.post('http://localhost:5001/api/clone', json=data)
 output_url = r.json()['download_url']
 ```
 
