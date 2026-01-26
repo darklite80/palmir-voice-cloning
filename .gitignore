@@ -45,3 +45,10 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Claude Code
+.claude-code-chat/
+
+# Flask uploads and outputs
+uploads/
+outputs/

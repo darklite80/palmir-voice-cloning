@@ -8,7 +8,8 @@ Local voice cloning using Coqui TTS XTTS v2 on your Raspberry Pi CM5.
 - 🌍 **Multilingual** - Supports 17+ languages
 - 🔊 **Integrated with Palmir hardware** - Uses device microphone and speakers
 - 💻 **Fully local** - No internet required after setup
-- 🚀 **Easy to use** - Simple CLI interface
+- 🚀 **Easy to use** - Web GUI + CLI interface
+- 🌐 **Web Interface** - Beautiful drag & drop web UI for easy voice cloning
 
 ## Installation
 
@@ -19,7 +20,34 @@ cd "/home/distiller/projects/voice cloning"
 source venv/bin/activate
 ```
 
-## Usage
+## Quick Start
+
+### Option 1: Web GUI (Recommended) 🌐
+
+Launch the beautiful web interface:
+
+```bash
+./start_web.sh
+```
+
+Then open in your browser:
+- **Local:** http://localhost:5000
+- **Network:** http://\<palmir-ip\>:5000
+
+**Features:**
+- Drag & drop file upload
+- Record directly from microphone
+- Real-time voice cloning
+- Audio playback & download
+- File management
+
+See [WEB_GUI_README.md](WEB_GUI_README.md) for details.
+
+### Option 2: Command Line Interface
+
+For CLI usage, see below or check [QUICKSTART.md](QUICKSTART.md).
+
+## CLI Usage
 
 ### Quick Start (Full Pipeline)
 
