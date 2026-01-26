@@ -301,12 +301,14 @@ def list_files():
 
 
 if __name__ == '__main__':
+    PORT = 8080  # Change this to your desired port
+
     print("=" * 60)
     print("🎙️  XTTS v2 Voice Cloning Web Interface")
     print("=" * 60)
     print("\nStarting web server...")
-    print("Open your browser to: http://localhost:5000")
+    print(f"Open your browser to: http://localhost:{PORT}")
     print("\nPress Ctrl+C to stop")
     print("=" * 60)
 
-    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+    app.run(host='0.0.0.0', port=PORT, debug=True, threaded=True)
