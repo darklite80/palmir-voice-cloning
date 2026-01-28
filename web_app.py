@@ -14,6 +14,9 @@ from werkzeug.utils import secure_filename
 
 warnings.filterwarnings('ignore')
 
+# Force torchaudio to use soundfile backend instead of torchcodec
+os.environ['TORCHAUDIO_USE_BACKEND_DISPATCHER'] = '0'
+
 # Add Palmir SDK to path
 sys.path.insert(0, '/opt/distiller-cm5-sdk')
 
@@ -72,8 +75,23 @@ def load_tts_model():
     model_loading = True
     try:
         print("Loading XTTS v2 model...")
+        # Set environment variable to auto-accept license
+        os.environ['COQUI_TOS_AGREED'] = '1'
+
+        # Configure PyTorch to load TTS models (trusted source from Coqui)
+        import torch
+        # Monkey-patch torch.load to use weights_only=False for TTS models
+        original_load = torch.load
+        def patched_load(*args, **kwargs):
+            kwargs.setdefault('weights_only', False)
+            return original_load(*args, **kwargs)
+        torch.load = patched_load
+
         from TTS.api import TTS
         tts_model = TTS('tts_models/multilingual/multi-dataset/xtts_v2', progress_bar=False)
+
+        # Restore original torch.load
+        torch.load = original_load
         print("✅ Model loaded successfully!")
         model_loading = False
         return tts_model
