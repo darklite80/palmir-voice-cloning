@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify, send_file, url_for
 from werkzeug.utils import secure_filename
+from voice_profiles import VoiceProfileManager
 
 warnings.filterwarnings('ignore')
 
@@ -29,6 +30,9 @@ app.config['SECRET_KEY'] = 'voice-cloning-secret-key-change-in-production'
 # Ensure directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
+
+# Initialize voice profile manager
+voice_manager = VoiceProfileManager()
 
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'flac', 'm4a'}
 LANGUAGES = {
@@ -121,7 +125,13 @@ def convert_to_wav(input_path, output_path):
 
 @app.route('/')
 def index():
-    """Main page."""
+    """Main page - voice profile management."""
+    return render_template('profiles.html', languages=LANGUAGES)
+
+
+@app.route('/simple')
+def simple():
+    """Simple single-file mode."""
     return render_template('index.html', languages=LANGUAGES)
 
 
@@ -338,6 +348,207 @@ def list_files():
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+
+# ============================================================================
+# Voice Profile API Endpoints
+# ============================================================================
+
+@app.route('/api/profiles', methods=['GET'])
+def list_profiles():
+    """List all voice profiles."""
+    try:
+        profiles = voice_manager.list_profiles()
+        return jsonify({'success': True, 'profiles': profiles})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/profiles/create', methods=['POST'])
+def create_profile():
+    """Create a new voice profile."""
+    try:
+        data = request.json
+        name = data.get('name', '').strip()
+
+        if not name:
+            return jsonify({'success': False, 'message': 'Profile name is required'})
+
+        profile = voice_manager.create_profile(name)
+        return jsonify({
+            'success': True,
+            'message': f'Profile "{name}" created successfully',
+            'profile': profile.to_dict()
+        })
+
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error creating profile: {str(e)}'})
+
+
+@app.route('/api/profiles/<profile_id>/add_sample', methods=['POST'])
+def add_sample_to_profile(profile_id):
+    """Add an audio sample to a voice profile."""
+    try:
+        data = request.json
+        audio_file = data.get('audio_file')
+
+        if not audio_file:
+            return jsonify({'success': False, 'message': 'Audio file is required'})
+
+        voice_manager.add_sample(profile_id, audio_file)
+        profile = voice_manager.get_profile(profile_id)
+
+        return jsonify({
+            'success': True,
+            'message': 'Sample added to profile',
+            'profile': profile.to_dict()
+        })
+
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error adding sample: {str(e)}'})
+
+
+@app.route('/api/profiles/<profile_id>/remove_sample', methods=['POST'])
+def remove_sample_from_profile(profile_id):
+    """Remove an audio sample from a voice profile."""
+    try:
+        data = request.json
+        audio_file = data.get('audio_file')
+
+        if not audio_file:
+            return jsonify({'success': False, 'message': 'Audio file is required'})
+
+        success = voice_manager.remove_sample(profile_id, audio_file)
+
+        if success:
+            profile = voice_manager.get_profile(profile_id)
+            return jsonify({
+                'success': True,
+                'message': 'Sample removed from profile',
+                'profile': profile.to_dict()
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Sample not found'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error removing sample: {str(e)}'})
+
+
+@app.route('/api/profiles/<profile_id>', methods=['GET'])
+def get_profile(profile_id):
+    """Get details of a voice profile."""
+    try:
+        profile = voice_manager.get_profile(profile_id)
+
+        if profile:
+            return jsonify({'success': True, 'profile': profile.to_dict()})
+        else:
+            return jsonify({'success': False, 'message': 'Profile not found'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/profiles/<profile_id>/delete', methods=['POST'])
+def delete_profile(profile_id):
+    """Delete a voice profile."""
+    try:
+        success = voice_manager.delete_profile(profile_id)
+
+        if success:
+            return jsonify({'success': True, 'message': 'Profile deleted successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Profile not found'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error deleting profile: {str(e)}'})
+
+
+@app.route('/api/profiles/<profile_id>/rename', methods=['POST'])
+def rename_profile(profile_id):
+    """Rename a voice profile."""
+    try:
+        data = request.json
+        new_name = data.get('new_name', '').strip()
+
+        if not new_name:
+            return jsonify({'success': False, 'message': 'New name is required'})
+
+        success = voice_manager.rename_profile(profile_id, new_name)
+
+        if success:
+            profile = voice_manager.get_profile(profile_id)
+            return jsonify({
+                'success': True,
+                'message': f'Profile renamed to "{new_name}"',
+                'profile': profile.to_dict()
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Profile not found'})
+
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error renaming profile: {str(e)}'})
+
+
+@app.route('/api/clone_with_profile', methods=['POST'])
+def clone_with_profile():
+    """Clone voice using a voice profile."""
+    data = request.json
+
+    profile_id = data.get('profile_id')
+    text = data.get('text', '')
+    language = data.get('language', 'en')
+
+    if not profile_id:
+        return jsonify({'success': False, 'message': 'No profile specified'})
+
+    if not text:
+        return jsonify({'success': False, 'message': 'No text provided'})
+
+    # Get primary sample from profile
+    reference_path = voice_manager.get_primary_sample(profile_id)
+    if not reference_path:
+        return jsonify({'success': False, 'message': 'Profile has no audio samples'})
+
+    # Load model if not loaded
+    model = load_tts_model()
+    if not model:
+        return jsonify({'success': False, 'message': f'Model not ready: {model_error or "Unknown error"}'})
+
+    try:
+        # Generate output filename
+        timestamp = int(time.time())
+        output_filename = f"cloned_{timestamp}.wav"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+
+        # Generate speech
+        profile = voice_manager.get_profile(profile_id)
+        print(f"Generating speech with profile '{profile.name}': '{text}' in {language}")
+        model.tts_to_file(
+            text=text,
+            speaker_wav=reference_path,
+            language=language,
+            file_path=output_path
+        )
+
+        return jsonify({
+            'success': True,
+            'message': f'Voice cloned successfully using profile "{profile.name}"',
+            'output_file': output_filename,
+            'download_url': url_for('download_file', filename=output_filename)
+        })
+
+    except Exception as e:
+        print(f"Error during voice cloning: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Voice cloning failed: {str(e)}'})
 
 
 if __name__ == '__main__':
