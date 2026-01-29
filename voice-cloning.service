@@ -1,0 +1,23 @@
+[Unit]
+Description=Voice Cloning Server - XTTS v2
+After=network.target
+
+[Service]
+Type=simple
+User=distiller
+WorkingDirectory=/home/distiller/projects/voice cloning
+ExecStart=/bin/bash -c 'cd "/home/distiller/projects/voice cloning" && ./venv/bin/python run_production.py'
+Restart=always
+RestartSec=10
+
+# Environment
+Environment="COQUI_TOS_AGREED=1"
+Environment="TORCHAUDIO_USE_BACKEND_DISPATCHER=0"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=voice-cloning
+
+[Install]
+WantedBy=multi-user.target
