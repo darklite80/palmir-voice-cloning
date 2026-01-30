@@ -125,7 +125,13 @@ def convert_to_wav(input_path, output_path):
 
 @app.route('/')
 def index():
-    """Main page."""
+    """Main page - voice profile management."""
+    return render_template('profiles.html', languages=LANGUAGES)
+
+
+@app.route('/simple')
+def simple():
+    """Simple single-file mode."""
     return render_template('index.html', languages=LANGUAGES)
 
 
@@ -488,6 +494,27 @@ def rename_profile(profile_id):
         return jsonify({'success': False, 'message': str(e)})
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error renaming profile: {str(e)}'})
+
+
+@app.route('/api/profiles/<profile_id>/update_prompt', methods=['POST'])
+def update_assistant_prompt(profile_id):
+    """Update assistant behavior prompt for a profile."""
+    try:
+        data = request.json
+        prompt = data.get('prompt', '').strip()
+
+        success = voice_manager.update_assistant_prompt(profile_id, prompt)
+
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Assistant prompt updated'
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Profile not found'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error updating prompt: {str(e)}'})
 
 
 @app.route('/api/clone_with_profile', methods=['POST'])

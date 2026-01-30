@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Profile Manager - XTTS v2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-dot.ready { background: #10b981; animation: pulse 2s infinite; }
+        .status-dot.loading { background: #f59e0b; animation: spin 1s linear infinite; }
+        .status-dot.error { background: #ef4444; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .profile-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .profile-item {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .profile-item:hover {
+            background: #f3f4f6;
+            border-color: #667eea;
+        }
+
+        .profile-item.active {
+            background: #eef2ff;
+            border-color: #667eea;
+        }
+
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .profile-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .profile-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+        }
+
+        .profile-info {
+            color: #6b7280;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .sample-list {
+            background: #f3f4f6;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .sample-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            margin: 3px 0;
+        }
+
+        .sample-name {
+            font-size: 0.9em;
+            color: #374151;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-small {
+            padding: 4px 10px;
+            font-size: 0.8em;
+        }
+
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="file"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .upload-area:hover {
+            background: #f9fafb;
+            border-color: #764ba2;
+        }
+
+        .upload-area.drag-over {
+            background: #eef2ff;
+            border-color: #667eea;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .message.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            color: #333;
+        }
+
+        .modal-close {
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎙️ Voice Profile Manager</h1>
+            <p>Create, manage, and use multiple voice profiles for cloning</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Checking status...</span>
+            </div>
+            <button class="btn btn-secondary btn-small" id="loadModelBtn" style="display:none;">Load Model</button>
+        </div>
+
+        <div class="grid">
+            <!-- Voice Profiles Section -->
+            <div class="card">
+                <h2>👥 Voice Profiles</h2>
+
+                <button class="btn btn-primary" id="createProfileBtn" style="width: 100%; margin-bottom: 15px;">
+                    + Create New Profile
+                </button>
+
+                <div id="profileMessage" class="message"></div>
+
+                <div class="profile-list" id="profileList">
+                    <div class="empty-state">
+                        <p>No voice profiles yet</p>
+                        <p style="font-size: 0.9em; margin-top: 10px;">Create your first profile to get started</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Profile Details -->
+            <div class="card">
+                <h2>⭐ Active Profile</h2>
+
+                <div id="activeProfileContainer" style="display: none;">
+                    <div style="background: #eef2ff; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h3 id="activeProfileName" style="color: #667eea; margin-bottom: 5px;"></h3>
+                        <p id="activeProfileInfo" style="color: #6b7280; font-size: 0.9em;"></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Audio Samples ({{ samples }})</label>
+                        <div id="activeSamplesList"></div>
+
+                        <div class="upload-area" id="addSampleArea" style="margin-top: 10px;">
+                            <input type="file" id="addSampleInput" accept=".wav,.mp3,.ogg,.flac,.m4a">
+                            <p>📁 Add More Samples</p>
+                            <p style="color: #6b7280; font-size: 0.9em;">3-5 clips recommended for best quality</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Assistant Behavior Prompt (Optional)</label>
+                        <textarea id="assistantPrompt" placeholder="e.g., 'You are a helpful and friendly assistant. Always be polite and concise.'"></textarea>
+                        <button class="btn btn-secondary btn-small" id="savePromptBtn" style="margin-top: 5px;">Save Prompt</button>
+                    </div>
+                </div>
+
+                <div id="noActiveProfile" style="text-align: center; padding: 40px; color: #6b7280;">
+                    <p>No profile selected</p>
+                    <p style="font-size: 0.9em; margin-top: 10px;">Select a profile from the list</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Voice Generation Section -->
+        <div class="card">
+            <h2>🎭 Generate Cloned Voice</h2>
+
+            <div id="generateMessage" class="message"></div>
+
+            <div class="grid">
+                <div>
+                    <div class="form-group">
+                        <label>Text to Speak</label>
+                        <textarea id="generateText" placeholder="Enter the text you want the cloned voice to speak...">Hello! This is a test of voice cloning technology.</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Language</label>
+                        <select id="generateLanguage">
+                            {% for code, name in languages.items() %}
+                            <option value="{{ code }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary" id="generateBtn" style="width: 100%;" disabled>
+                        Generate with Active Profile
+                    </button>
+                </div>
+
+                <div>
+                    <div id="outputAudio" style="display:none;">
+                        <h3 style="margin-bottom: 10px; color: #333;">🔊 Generated Audio</h3>
+                        <audio controls style="width: 100%; margin-bottom: 10px;" id="audioPlayer"></audio>
+                        <a id="downloadLink" class="btn btn-secondary btn-small" style="text-decoration: none;">
+                            ⬇️ Download
+                        </a>
+                    </div>
+
+                    <div id="recentOutputs" style="margin-top: 20px;">
+                        <h3 style="margin-bottom: 10px; color: #333;">Recent Generations</h3>
+                        <div id="outputsList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Profile Modal -->
+    <div class="modal" id="createProfileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Voice Profile</h3>
+                <span class="modal-close" onclick="closeModal('createProfileModal')">&times;</span>
+            </div>
+
+            <div id="createModalMessage" class="message"></div>
+
+            <div class="form-group">
+                <label>Profile Name</label>
+                <input type="text" id="newProfileName" placeholder="e.g., My Voice, John's Voice">
+            </div>
+
+            <div class="form-group">
+                <label>Mode</label>
+                <select id="profileMode">
+                    <option value="single">Single File - Start with one sample</option>
+                    <option value="multi">Multi File - Add multiple samples now</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Upload Audio Sample(s)</label>
+                <div class="upload-area" id="createUploadArea">
+                    <input type="file" id="createFileInput" accept=".wav,.mp3,.ogg,.flac,.m4a" multiple>
+                    <p>📁 Drop files here or click to browse</p>
+                    <p style="color: #6b7280; font-size: 0.9em; margin-top: 5px;">
+                        WAV, MP3, OGG, FLAC, M4A supported
+                    </p>
+                </div>
+                <div id="selectedFiles"></div>
+            </div>
+
+            <button class="btn btn-primary" id="createProfileSubmitBtn" style="width: 100%;">
+                Create Profile
+            </button>
+        </div>
+    </div>
+
+    <!-- Rename Profile Modal -->
+    <div class="modal" id="renameProfileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Rename Profile</h3>
+                <span class="modal-close" onclick="closeModal('renameProfileModal')">&times;</span>
+            </div>
+
+            <div class="form-group">
+                <label>New Name</label>
+                <input type="text" id="renameProfileInput">
+            </div>
+
+            <button class="btn btn-primary" id="renameProfileSubmitBtn" style="width: 100%;">
+                Rename
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let activeProfile = null;
+        let currentProfiles = [];
+        let uploadedFilesForCreate = [];
+        let selectedFilesForCreate = [];
+
+        // Initialize
+        checkStatus();
+        loadProfiles();
+        setInterval(checkStatus, 5000);
+
+        // Status check
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+
+                const dot = document.getElementById('statusDot');
+                const text = document.getElementById('statusText');
+                const loadBtn = document.getElementById('loadModelBtn');
+
+                dot.className = 'status-dot ' + data.status;
+                text.textContent = data.message;
+
+                if (data.status === 'idle' || data.status === 'error') {
+                    loadBtn.style.display = 'block';
+                } else {
+                    loadBtn.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Status check failed:', error);
+            }
+        }
+
+        document.getElementById('loadModelBtn').addEventListener('click', async () => {
+            showMessage('info', 'Loading model... This may take 1-3 minutes.', 'profileMessage');
+            try {
+                const response = await fetch('/api/load_model', {method: 'POST'});
+                const data = await response.json();
+                showMessage(data.success ? 'success' : 'error', data.message, 'profileMessage');
+            } catch (error) {
+                showMessage('error', 'Failed to load model: ' + error.message, 'profileMessage');
+            }
+        });
+
+        // Load profiles
+        async function loadProfiles() {
+            try {
+                const response = await fetch('/api/profiles');
+                const data = await response.json();
+
+                if (data.success) {
+                    currentProfiles = data.profiles;
+                    renderProfiles(data.profiles);
+                }
+            } catch (error) {
+                console.error('Failed to load profiles:', error);
+            }
+        }
+
+        // Render profiles
+        function renderProfiles(profiles) {
+            const container = document.getElementById('profileList');
+
+            if (profiles.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>No voice profiles yet</p>
+                        <p style="font-size: 0.9em; margin-top: 10px;">Create your first profile to get started</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = profiles.map(profile => `
+                <div class="profile-item ${activeProfile && activeProfile.profile_id === profile.profile_id ? 'active' : ''}"
+                     onclick="selectProfile('${profile.profile_id}')">
+                    <div class="profile-header">
+                        <div class="profile-name">${escapeHtml(profile.name)}</div>
+                        ${activeProfile && activeProfile.profile_id === profile.profile_id ? '<span class="profile-badge">ACTIVE</span>' : ''}
+                    </div>
+                    <div class="profile-info">
+                        ${profile.sample_count} sample${profile.sample_count !== 1 ? 's' : ''} • Created ${formatDate(profile.created_at)}
+                    </div>
+                    <div class="profile-actions">
+                        <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); selectProfile('${profile.profile_id}')">
+                            ${activeProfile && activeProfile.profile_id === profile.profile_id ? '✓ Active' : 'Select'}
+                        </button>
+                        <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); renameProfile('${profile.profile_id}', '${escapeHtml(profile.name)}')">
+                            Rename
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteProfile('${profile.profile_id}', '${escapeHtml(profile.name)}')">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Select profile
+        async function selectProfile(profileId) {
+            try {
+                const response = await fetch(`/api/profiles/${profileId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    activeProfile = data.profile;
+                    updateActiveProfile(data.profile);
+                    renderProfiles(currentProfiles);
+                    document.getElementById('generateBtn').disabled = false;
+                }
+            } catch (error) {
+                showMessage('error', 'Failed to load profile: ' + error.message, 'profileMessage');
+            }
+        }
+
+        // Update active profile display
+        function updateActiveProfile(profile) {
+            document.getElementById('activeProfileContainer').style.display = 'block';
+            document.getElementById('noActiveProfile').style.display = 'none';
+
+            document.getElementById('activeProfileName').textContent = profile.name;
+            document.getElementById('activeProfileInfo').textContent =
+                `${profile.sample_count} sample${profile.sample_count !== 1 ? 's' : ''}`;
+
+            // Load assistant prompt
+            document.getElementById('assistantPrompt').value = profile.assistant_prompt || '';
+
+            // Render samples
+            const samplesList = document.getElementById('activeSamplesList');
+            if (profile.samples && profile.samples.length > 0) {
+                samplesList.innerHTML = `
+                    <div class="sample-list">
+                        ${profile.samples.map(sample => `
+                            <div class="sample-item">
+                                <span class="sample-name">🎵 ${sample}</span>
+                                <button class="btn btn-danger btn-small" onclick="removeSample('${profile.profile_id}', '${sample}')">
+                                    Remove
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                samplesList.innerHTML = '<p style="color: #6b7280;">No samples yet. Add your first sample below.</p>';
+            }
+        }
+
+        // Create profile modal
+        document.getElementById('createProfileBtn').addEventListener('click', () => {
+            document.getElementById('newProfileName').value = '';
+            document.getElementById('selectedFiles').innerHTML = '';
+            selectedFilesForCreate = [];
+            uploadedFilesForCreate = [];
+            openModal('createProfileModal');
+        });
+
+        // File upload for create modal
+        const createUploadArea = document.getElementById('createUploadArea');
+        const createFileInput = document.getElementById('createFileInput');
+
+        createUploadArea.addEventListener('click', () => createFileInput.click());
+
+        createUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            createUploadArea.classList.add('drag-over');
+        });
+
+        createUploadArea.addEventListener('dragleave', () => {
+            createUploadArea.classList.remove('drag-over');
+        });
+
+        createUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            createUploadArea.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) {
+                handleCreateFiles(e.dataTransfer.files);
+            }
+        });
+
+        createFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleCreateFiles(e.target.files);
+            }
+        });
+
+        async function handleCreateFiles(files) {
+            selectedFilesForCreate = Array.from(files);
+            document.getElementById('selectedFiles').innerHTML =
+                `<p style="margin-top: 10px; color: #667eea;">${files.length} file(s) selected</p>`;
+        }
+
+        // Create profile submit
+        document.getElementById('createProfileSubmitBtn').addEventListener('click', async () => {
+            const name = document.getElementById('newProfileName').value.trim();
+            const mode = document.getElementById('profileMode').value;
+
+            if (!name) {
+                showMessage('error', 'Please enter a profile name', 'createModalMessage');
+                return;
+            }
+
+            if (selectedFilesForCreate.length === 0) {
+                showMessage('error', 'Please select at least one audio file', 'createModalMessage');
+                return;
+            }
+
+            try {
+                // Create profile
+                const createResponse = await fetch('/api/profiles/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name})
+                });
+
+                const createData = await createResponse.json();
+                if (!createData.success) {
+                    showMessage('error', createData.message, 'createModalMessage');
+                    return;
+                }
+
+                const profileId = createData.profile.profile_id;
+
+                // Upload files
+                for (const file of selectedFilesForCreate) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const uploadResponse = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const uploadData = await uploadResponse.json();
+                    if (uploadData.success) {
+                        // Add to profile
+                        await fetch(`/api/profiles/${profileId}/add_sample`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({audio_file: uploadData.filename})
+                        });
+                    }
+                }
+
+                closeModal('createProfileModal');
+                showMessage('success', `Profile "${name}" created with ${selectedFilesForCreate.length} sample(s)`, 'profileMessage');
+                loadProfiles();
+                selectProfile(profileId);
+
+            } catch (error) {
+                showMessage('error', 'Failed to create profile: ' + error.message, 'createModalMessage');
+            }
+        });
+
+        // Rename profile
+        let renameProfileId = null;
+        function renameProfile(profileId, currentName) {
+            renameProfileId = profileId;
+            document.getElementById('renameProfileInput').value = currentName;
+            openModal('renameProfileModal');
+        }
+
+        document.getElementById('renameProfileSubmitBtn').addEventListener('click', async () => {
+            const newName = document.getElementById('renameProfileInput').value.trim();
+
+            if (!newName) {
+                alert('Please enter a new name');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/profiles/${renameProfileId}/rename`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({new_name: newName})
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    closeModal('renameProfileModal');
+                    showMessage('success', `Profile renamed to "${newName}"`, 'profileMessage');
+                    loadProfiles();
+                    if (activeProfile && activeProfile.profile_id === renameProfileId) {
+                        selectProfile(renameProfileId);
+                    }
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Failed to rename profile: ' + error.message);
+            }
+        });
+
+        // Delete profile
+        async function deleteProfile(profileId, profileName) {
+            if (!confirm(`Delete profile "${profileName}"? This cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/profiles/${profileId}/delete`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('success', `Profile "${profileName}" deleted`, 'profileMessage');
+                    loadProfiles();
+                    if (activeProfile && activeProfile.profile_id === profileId) {
+                        activeProfile = null;
+                        document.getElementById('activeProfileContainer').style.display = 'none';
+                        document.getElementById('noActiveProfile').style.display = 'block';
+                        document.getElementById('generateBtn').disabled = true;
+                    }
+                } else {
+                    showMessage('error', data.message, 'profileMessage');
+                }
+            } catch (error) {
+                showMessage('error', 'Failed to delete profile: ' + error.message, 'profileMessage');
+            }
+        }
+
+        // Add sample to active profile
+        document.getElementById('addSampleArea').addEventListener('click', () => {
+            document.getElementById('addSampleInput').click();
+        });
+
+        document.getElementById('addSampleInput').addEventListener('change', async (e) => {
+            if (!activeProfile || !e.target.files.length) return;
+
+            const file = e.target.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const uploadResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const uploadData = await uploadResponse.json();
+                if (uploadData.success) {
+                    const addResponse = await fetch(`/api/profiles/${activeProfile.profile_id}/add_sample`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({audio_file: uploadData.filename})
+                    });
+
+                    const addData = await addResponse.json();
+                    if (addData.success) {
+                        showMessage('success', 'Sample added to profile', 'profileMessage');
+                        selectProfile(activeProfile.profile_id);
+                        loadProfiles();
+                    }
+                }
+            } catch (error) {
+                showMessage('error', 'Failed to add sample: ' + error.message, 'profileMessage');
+            }
+        });
+
+        // Remove sample
+        async function removeSample(profileId, sampleName) {
+            if (!confirm(`Remove sample "${sampleName}"?`)) return;
+
+            try {
+                const response = await fetch(`/api/profiles/${profileId}/remove_sample`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({audio_file: sampleName})
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('success', 'Sample removed', 'profileMessage');
+                    selectProfile(profileId);
+                    loadProfiles();
+                }
+            } catch (error) {
+                showMessage('error', 'Failed to remove sample: ' + error.message, 'profileMessage');
+            }
+        }
+
+        // Generate voice
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            if (!activeProfile) {
+                showMessage('error', 'Please select a profile first', 'generateMessage');
+                return;
+            }
+
+            const text = document.getElementById('generateText').value.trim();
+            const language = document.getElementById('generateLanguage').value;
+
+            if (!text) {
+                showMessage('error', 'Please enter text to speak', 'generateMessage');
+                return;
+            }
+
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Generating...';
+
+            showMessage('info', 'Generating speech... This may take 10-30 seconds.', 'generateMessage');
+
+            try {
+                const response = await fetch('/api/clone_with_profile', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        profile_id: activeProfile.profile_id,
+                        text: text,
+                        language: language
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('success', data.message, 'generateMessage');
+
+                    // Show audio player
+                    document.getElementById('outputAudio').style.display = 'block';
+                    const audio = document.getElementById('audioPlayer');
+                    audio.src = data.download_url + '?t=' + Date.now();
+
+                    document.getElementById('downloadLink').href = data.download_url;
+
+                    loadRecentOutputs();
+                } else {
+                    showMessage('error', data.message, 'generateMessage');
+                }
+            } catch (error) {
+                showMessage('error', 'Generation failed: ' + error.message, 'generateMessage');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Generate with Active Profile';
+            }
+        });
+
+        // Load recent outputs
+        async function loadRecentOutputs() {
+            try {
+                const response = await fetch('/api/files');
+                const data = await response.json();
+
+                if (data.success && data.outputs.length > 0) {
+                    const outputsList = document.getElementById('outputsList');
+                    outputsList.innerHTML = data.outputs.slice(0, 5).map(file => `
+                        <div style="background: #f9fafb; padding: 10px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9em;">${file.name}</span>
+                            <a href="${file.download_url}" class="btn btn-secondary btn-small" style="text-decoration: none;">⬇️</a>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load outputs:', error);
+            }
+        }
+
+        loadRecentOutputs();
+
+        // Save assistant prompt
+        document.getElementById('savePromptBtn').addEventListener('click', async () => {
+            if (!activeProfile) {
+                showMessage('error', 'No profile selected', 'profileMessage');
+                return;
+            }
+
+            const prompt = document.getElementById('assistantPrompt').value.trim();
+
+            try {
+                const response = await fetch(`/api/profiles/${activeProfile.profile_id}/update_prompt`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({prompt})
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('success', 'Assistant prompt saved', 'profileMessage');
+                    activeProfile.assistant_prompt = prompt;
+                } else {
+                    showMessage('error', data.message, 'profileMessage');
+                }
+            } catch (error) {
+                showMessage('error', 'Failed to save prompt: ' + error.message, 'profileMessage');
+            }
+        });
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Utility functions
+        function showMessage(type, message, elementId) {
+            const el = document.getElementById(elementId);
+            el.className = 'message ' + type;
+            el.textContent = message;
+            el.style.display = 'block';
+
+            setTimeout(() => {
+                el.style.display = 'none';
+            }, 5000);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

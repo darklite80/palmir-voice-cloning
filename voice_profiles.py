@@ -15,11 +15,13 @@ from datetime import datetime
 class VoiceProfile:
     """Represents a voice profile with multiple audio samples."""
 
-    def __init__(self, name: str, profile_id: str, samples: List[str], created_at: str):
+    def __init__(self, name: str, profile_id: str, samples: List[str], created_at: str,
+                 assistant_prompt: str = ""):
         self.name = name
         self.profile_id = profile_id
         self.samples = samples
         self.created_at = created_at
+        self.assistant_prompt = assistant_prompt
 
     def to_dict(self) -> Dict:
         return {
@@ -27,7 +29,8 @@ class VoiceProfile:
             'profile_id': self.profile_id,
             'samples': self.samples,
             'created_at': self.created_at,
-            'sample_count': len(self.samples)
+            'sample_count': len(self.samples),
+            'assistant_prompt': self.assistant_prompt
         }
 
     @classmethod
@@ -36,7 +39,8 @@ class VoiceProfile:
             name=data['name'],
             profile_id=data['profile_id'],
             samples=data.get('samples', []),
-            created_at=data.get('created_at', datetime.now().isoformat())
+            created_at=data.get('created_at', datetime.now().isoformat()),
+            assistant_prompt=data.get('assistant_prompt', "")
         )
 
 
@@ -290,6 +294,24 @@ class VoiceProfileManager:
                 raise ValueError(f"Profile with name '{new_name}' already exists")
 
         self._profiles[profile_id].name = new_name
+        self._save_profiles()
+        return True
+
+    def update_assistant_prompt(self, profile_id: str, prompt: str) -> bool:
+        """
+        Update the assistant behavior prompt for a profile.
+
+        Args:
+            profile_id: ID of the profile
+            prompt: Assistant behavior/mannerism prompt
+
+        Returns:
+            True if successful
+        """
+        if profile_id not in self._profiles:
+            return False
+
+        self._profiles[profile_id].assistant_prompt = prompt
         self._save_profiles()
         return True
 
