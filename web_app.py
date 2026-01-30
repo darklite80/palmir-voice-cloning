@@ -125,13 +125,7 @@ def convert_to_wav(input_path, output_path):
 
 @app.route('/')
 def index():
-    """Main page - voice profile management."""
-    return render_template('profiles.html', languages=LANGUAGES)
-
-
-@app.route('/simple')
-def simple():
-    """Simple single-file mode."""
+    """Main page."""
     return render_template('index.html', languages=LANGUAGES)
 
 
